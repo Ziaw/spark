@@ -4,6 +4,10 @@
 #include "atlutil.h"
 #include "SparkLanguagePackage_i.h"
 
+// EDCC3B79-0BAD-11DB-BC1A-00112FDE8B61
+static const GUID NemerleLangGuid = 
+		{ 0xEDCC3B79, 0x0BAD, 0x11DB, { 0xbc, 0x1a, 0x00, 0x11, 0x2f, 0xde, 0x8b, 0x61 } };
+
 
 class SourceInit
 {

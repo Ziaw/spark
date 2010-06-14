@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Runtime.InteropServices;
 using Spark.Compiler;
@@ -53,11 +55,39 @@ namespace SparkLanguage
                                };
 
             var viewFolder = new VsProjectViewFolder(_source, hierarchy);
+            try
+            {
+                AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+                {
+                    var name = args.Name;
+                    if (name.IndexOf(',') >= 0)
+                        name = name.Substring(0, name.IndexOf(','));
+                    var path = Path.Combine(@"C:\Projects\Nemerle\nemerleonrails\NRails\bin\Debug",
+                                  name + ".dll");
 
-            _engine = new SparkViewEngine(settings)
-                          {
-                              ViewFolder = viewFolder
-                          };
+                    if (File.Exists(path))
+                        return Assembly.LoadFrom(path);
+                    else
+                        return Assembly.Load(args.Name);
+                };
+
+                //Environment.CurrentDirectory = @"C:\Projects\Nemerle\nemerleonrails\NRails\bin\Debug";
+                //var nrails = Assembly.LoadFile(@"C:\Projects\Nemerle\nemerleonrails\NRails\bin\Debug\NRails.dll");
+                var startertType = Type.GetType("NRails.Spark.SparkNemerleEngineStarter, NRails");
+                var containerGetter = startertType.GetMethod("CreateContainer", new[] { typeof(ISparkSettings) });
+                var container = (ISparkServiceContainer)containerGetter.Invoke(null, new object[] { settings });
+                _engine = (SparkViewEngine) container.GetService<ISparkViewEngine>();
+                _engine.ViewFolder = viewFolder;
+            }
+            catch (Exception e)
+            {
+                _engine = new SparkViewEngine(settings)
+                              {
+                                  ViewFolder = viewFolder
+                              };
+            }
+
+
 
             _grammar = new MarkupGrammar(settings);
         }

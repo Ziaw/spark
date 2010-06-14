@@ -19,6 +19,7 @@ class ATL_NO_VTABLE Colorizer:
 {	
 	CComPtr<ISparkSource> _source;
 	CComPtr<IVsContainedLanguageColorizer> _containedColorizer;
+	CComPtr<IVsColorizer> _colorizer;
 
 	long _paintLength;
 	SourcePainting* _paintArray;

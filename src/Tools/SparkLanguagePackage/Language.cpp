@@ -47,7 +47,9 @@ STDMETHODIMP Language::GetColorizer(
 	HRESULT hr = S_OK;
 
 	CComPtr<IVsProvideColorableItems> csharpItems;
-	_HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
+	// todo: _HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
+	_HR(_site->QueryService(NemerleLangGuid, &csharpItems));
+
 	int csharpItemCount;
 	_HR(csharpItems->GetItemCount(&csharpItemCount));
 
@@ -73,7 +75,10 @@ STDMETHODIMP Language::GetItemCount(
 	HRESULT hr = S_OK;
 
 	CComPtr<IVsProvideColorableItems> csharpItems;
-	_HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
+	
+	//todo: _HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
+	_HR(_site->QueryService(NemerleLangGuid, &csharpItems));
+
 	int csharpItemCount;
 	_HR(csharpItems->GetItemCount(&csharpItemCount));
 
@@ -94,7 +99,9 @@ STDMETHODIMP Language::GetColorableItem(
 
 	// return csharp color info for lower band
 	CComPtr<IVsProvideColorableItems> csharpItems;
-	_HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
+	
+	//todo: _HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
+	_HR(_site->QueryService(NemerleLangGuid, &csharpItems));
 
 	// default@[0] : reserved
 	// csharpItemCount@[1..csharpItemCount] : contained language colors

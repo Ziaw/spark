@@ -9,9 +9,8 @@ HRESULT Colorizer::FinalConstruct()
 
 	CComPtr<IVsContainedLanguage> containedLanguage;
 	_HR(_source->GetContainedLanguage(&containedLanguage));
-	CComPtr<IVsColorizer> colorizer;
-	_HR(containedLanguage->GetColorizer(&colorizer));
-	_HR(colorizer->QueryInterface(&_containedColorizer));
+	_HR(containedLanguage->GetColorizer(&_colorizer));
+	//todo _HR(colorizer->QueryInterface(&_containedColorizer));
 	return hr;
 }
 
@@ -110,7 +109,10 @@ STDMETHODIMP_(long) Colorizer::ColorizeLine(
 			iLastIndex = mapping.tspSpans.span1.iEndIndex;
 		
 		long ignore = 0;
-		_containedColorizer->ColorizeLineFragment(iLine, iFirstIndex, iLastIndex - iFirstIndex, pszText, 0, pAttributes, &ignore);
+		
+		_colorizer->ColorizeLine(iLine, iLastIndex - iFirstIndex, pszText + iFirstIndex, 0, pAttributes);
+
+		//todo _containedColorizer->ColorizeLineFragment(iLine, iFirstIndex, iLastIndex - iFirstIndex, pszText, 0, pAttributes, &ignore);
 	}
 
 	return 0;

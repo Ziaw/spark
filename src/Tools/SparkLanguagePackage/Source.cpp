@@ -81,7 +81,9 @@ HRESULT Source::FinalConstruct()
 	// Initialize secondary buffer and coordinator
 	_HR(reg->CreateInstance(__uuidof(VsTextBuffer), NULL, __uuidof(IVsTextLines), CLSCTX_INPROC_SERVER, (void**)&_secondaryBuffer));
 	_HR(SiteObject(_secondaryBuffer, _site));
-	_HR(_secondaryBuffer->SetLanguageServiceID(__uuidof(CSharp)));
+	
+	//todo: _HR(_secondaryBuffer->SetLanguageServiceID(__uuidof(CSharp)));
+	_HR(_secondaryBuffer->SetLanguageServiceID(NemerleLangGuid));
 
 	_HR(reg->CreateInstance(__uuidof(VsTextBufferCoordinator), NULL, __uuidof(IVsTextBufferCoordinator), CLSCTX_INPROC_SERVER, (void**)&_bufferCoordinator));
 	_HR(SiteObject(_bufferCoordinator, _site));
@@ -106,7 +108,10 @@ HRESULT Source::FinalConstruct()
 
 	// Initialize contained language
 	CComPtr<IVsContainedLanguageFactory> containedLanguagefactory;
-	_HR(_projectManager->GetContainedLanguageFactory(CComBSTR(_T("CSharp")), &containedLanguagefactory));
+	
+	//_HR(_projectManager->GetContainedLanguageFactory(CComBSTR(_T("CSharp")), &containedLanguagefactory));
+	_HR(_projectManager->GetContainedLanguageFactory(CComBSTR(_T("Nemerle")), &containedLanguagefactory));
+	
 	_HR(containedLanguagefactory->GetLanguage(_hierarchy, _itemid, _bufferCoordinator, &_containedLanguage));
 	_HR(_containedLanguage->SetHost(this));
 	
