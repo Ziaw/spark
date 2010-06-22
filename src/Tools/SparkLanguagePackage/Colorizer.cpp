@@ -10,7 +10,7 @@ HRESULT Colorizer::FinalConstruct()
 	CComPtr<IVsContainedLanguage> containedLanguage;
 	_HR(_source->GetContainedLanguage(&containedLanguage));
 	_HR(containedLanguage->GetColorizer(&_colorizer));
-	//todo _HR(colorizer->QueryInterface(&_containedColorizer));
+	//_HR(_colorizer->QueryInterface(&_containedColorizer));
 	return hr;
 }
 
@@ -110,7 +110,8 @@ STDMETHODIMP_(long) Colorizer::ColorizeLine(
 		
 		long ignore = 0;
 		
-		_colorizer->ColorizeLine(iLine, iLastIndex - iFirstIndex, pszText + iFirstIndex, 0, pAttributes);
+        // to sergee: нужно какое-то решение с колорайзером
+		_HR(_colorizer->ColorizeLine(iLine, iLastIndex - iFirstIndex, pszText + iFirstIndex, 0, pAttributes));
 
 		//todo _containedColorizer->ColorizeLineFragment(iLine, iFirstIndex, iLastIndex - iFirstIndex, pszText, 0, pAttributes, &ignore);
 	}

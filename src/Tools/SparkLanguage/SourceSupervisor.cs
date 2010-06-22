@@ -31,7 +31,7 @@ namespace SparkLanguage
             // in the generated file. This setting is changed for the entire 
             // AppDomain running inside the devenv process.
 
-            SourceWriter.AdjustDebugSymbolsDefault = false;
+            //SourceWriter.AdjustDebugSymbolsDefault = false;
         }
 
         public SourceSupervisor(ISparkSource source)
@@ -55,24 +55,23 @@ namespace SparkLanguage
                                };
 
             var viewFolder = new VsProjectViewFolder(_source, hierarchy);
+            ResolveEventHandler assemblyResolve = (sender, args) =>
+            {
+                var name = args.Name;
+                if (name.IndexOf(',') >= 0)
+                    name = name.Substring(0, name.IndexOf(','));
+
+                // to sergee: fix path
+                var path = Path.Combine(@"C:\Projects\Nemerle\nemerleonrails\NRails\bin\Debug", name + ".dll");
+
+                if (File.Exists(path))
+                    return Assembly.LoadFrom(path);
+                else
+                    return Assembly.Load(name);
+            };
+            AppDomain.CurrentDomain.AssemblyResolve += assemblyResolve;
             try
             {
-                AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
-                {
-                    var name = args.Name;
-                    if (name.IndexOf(',') >= 0)
-                        name = name.Substring(0, name.IndexOf(','));
-                    var path = Path.Combine(@"C:\Projects\Nemerle\nemerleonrails\NRails\bin\Debug",
-                                  name + ".dll");
-
-                    if (File.Exists(path))
-                        return Assembly.LoadFrom(path);
-                    else
-                        return Assembly.Load(args.Name);
-                };
-
-                //Environment.CurrentDirectory = @"C:\Projects\Nemerle\nemerleonrails\NRails\bin\Debug";
-                //var nrails = Assembly.LoadFile(@"C:\Projects\Nemerle\nemerleonrails\NRails\bin\Debug\NRails.dll");
                 var startertType = Type.GetType("NRails.Spark.SparkNemerleEngineStarter, NRails");
                 var containerGetter = startertType.GetMethod("CreateContainer", new[] { typeof(ISparkSettings) });
                 var container = (ISparkServiceContainer)containerGetter.Invoke(null, new object[] { settings });
@@ -85,6 +84,10 @@ namespace SparkLanguage
                               {
                                   ViewFolder = viewFolder
                               };
+            }
+            finally
+            {
+                AppDomain.CurrentDomain.AssemblyResolve -= assemblyResolve;
             }
 
 

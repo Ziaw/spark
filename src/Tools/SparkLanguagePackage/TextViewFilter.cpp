@@ -25,7 +25,10 @@ HRESULT TextViewFilter::FinalConstruct()
 
 
 	// Obtain the contained text view filter and command target
+	
+	// to sergee еще проблема тут
 	_HR(containedLanguage->GetTextViewFilter(_intellisenseHost, this, &_containedTextViewFilter));
+
 	_HR(_containedTextViewFilter->QueryInterface(&_containedCommandTarget));
 
 	// Wedge command target and text view filter into chain
