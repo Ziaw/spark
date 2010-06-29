@@ -96,6 +96,7 @@ interface ISparkSource : IUnknown
 	HRESULT GetPaint([out] long* cPaint, [out, size_is(,*cPaint)] SourcePainting** prgPaint);
 
 	HRESULT GetDefaultPageBaseType([out, retval] BSTR* pPageBaseType);
+	HRESULT IsNemerle([out, retval] BOOL* pFlag);
 };
 
 

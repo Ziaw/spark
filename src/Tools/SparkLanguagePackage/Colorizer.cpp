@@ -10,6 +10,7 @@ HRESULT Colorizer::FinalConstruct()
 	CComPtr<IVsContainedLanguage> containedLanguage;
 	_HR(_source->GetContainedLanguage(&containedLanguage));
 	_HR(containedLanguage->GetColorizer(&_colorizer));
+
 	//_HR(_colorizer->QueryInterface(&_containedColorizer));
 	return hr;
 }
@@ -89,6 +90,9 @@ STDMETHODIMP_(long) Colorizer::ColorizeLine(
 
 	CComPtr<IVsEnumBufferCoordinatorSpans> pEnum;
 	_HR(coordinator->EnumSpans(&pEnum));
+	
+	ULONG* pAttributesBackup = new ULONG[iLength];
+
 	while(SUCCEEDED(hr))
 	{
 		NewSpanMapping mapping = {0};
@@ -109,12 +113,24 @@ STDMETHODIMP_(long) Colorizer::ColorizeLine(
 			iLastIndex = mapping.tspSpans.span1.iEndIndex;
 		
 		long ignore = 0;
-		
-        // to sergee: нужно какое-то решение с колорайзером
-		_HR(_colorizer->ColorizeLine(iLine, iLastIndex - iFirstIndex, pszText + iFirstIndex, 0, pAttributes));
 
-		//todo _containedColorizer->ColorizeLineFragment(iLine, iFirstIndex, iLastIndex - iFirstIndex, pszText, 0, pAttributes, &ignore);
+		if (IsNemerle())
+		{
+			for (long index = 0; index < iLength; ++index)
+				pAttributesBackup[index] = pAttributes[index];
+
+			_HR(_colorizer->ColorizeLine(iLine, iLastIndex - iFirstIndex, pszText, 0, pAttributes));
+
+			for (long index = 0; index < iFirstIndex - 1; ++index)
+				pAttributes[index] = pAttributesBackup[index];
+		}
+		else
+		{
+			_HR(_containedColorizer->ColorizeLineFragment(iLine, iFirstIndex, iLastIndex - iFirstIndex, pszText, 0, pAttributes, &ignore));
+		}
 	}
+
+	delete pAttributesBackup;
 
 	return 0;
 }

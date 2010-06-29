@@ -82,13 +82,6 @@ HRESULT Source::FinalConstruct()
 	_HR(reg->CreateInstance(__uuidof(VsTextBuffer), NULL, __uuidof(IVsTextLines), CLSCTX_INPROC_SERVER, (void**)&_secondaryBuffer));
 	_HR(SiteObject(_secondaryBuffer, _site));
 	
-	//todo: _HR(_secondaryBuffer->SetLanguageServiceID(__uuidof(CSharp)));
-	_HR(_secondaryBuffer->SetLanguageServiceID(NemerleLangGuid));
-
-	_HR(reg->CreateInstance(__uuidof(VsTextBufferCoordinator), NULL, __uuidof(IVsTextBufferCoordinator), CLSCTX_INPROC_SERVER, (void**)&_bufferCoordinator));
-	_HR(SiteObject(_bufferCoordinator, _site));
-	_HR(_bufferCoordinator->SetBuffers(_primaryBuffer, _secondaryBuffer));
-
 	// Get the moniker for the text buffer
 	CComPtr<IVsUserData> userData;
 	_HR(_primaryBuffer->QueryInterface(&userData));		
@@ -101,6 +94,19 @@ HRESULT Source::FinalConstruct()
 	_HR(_site->QueryService(__uuidof(IWebApplicationCtxSvc), &webApplicationCtx));
 	_HR(webApplicationCtx->GetItemContextFromPath(V_BSTR(&moniker), FALSE, &_hierarchy, &_itemid));
 
+	if (isNemerle())
+	{
+		_HR(_secondaryBuffer->SetLanguageServiceID(NemerleLangGuid));
+	}
+	else
+	{
+		_HR(_secondaryBuffer->SetLanguageServiceID(__uuidof(CSharp)));
+	}
+
+	_HR(reg->CreateInstance(__uuidof(VsTextBufferCoordinator), NULL, __uuidof(IVsTextBufferCoordinator), CLSCTX_INPROC_SERVER, (void**)&_bufferCoordinator));
+	_HR(SiteObject(_bufferCoordinator, _site));
+	_HR(_bufferCoordinator->SetBuffers(_primaryBuffer, _secondaryBuffer));
+
 	// Locate intellisense project manager
 	CComPtr<IServiceProvider> itemServices;
 	_HR(webApplicationCtx->GetItemContext(_hierarchy, _itemid, &itemServices));		
@@ -109,8 +115,15 @@ HRESULT Source::FinalConstruct()
 	// Initialize contained language
 	CComPtr<IVsContainedLanguageFactory> containedLanguagefactory;
 	
-	//_HR(_projectManager->GetContainedLanguageFactory(CComBSTR(_T("CSharp")), &containedLanguagefactory));
-	_HR(_projectManager->GetContainedLanguageFactory(CComBSTR(_T("Nemerle")), &containedLanguagefactory));
+	if (isNemerle())
+	{
+		_HR(_projectManager->GetContainedLanguageFactory(CComBSTR(_T("Nemerle")), &containedLanguagefactory));
+	}
+	else
+	{
+		_HR(_projectManager->GetContainedLanguageFactory(CComBSTR(_T("CSharp")), &containedLanguagefactory))
+	}
+
 	
 	_HR(containedLanguagefactory->GetLanguage(_hierarchy, _itemid, _bufferCoordinator, &_containedLanguage));
 	_HR(_containedLanguage->SetHost(this));
@@ -281,4 +294,25 @@ STDMETHODIMP Source::GetLineIndent(
 	*pfTabs = FALSE;
 	*plTabSize = 4;
 	return S_OK;
+}
+
+STDMETHODIMP Source::IsNemerle(__RPC__out BOOL *pFlag)
+{
+	HRESULT hr = S_OK;
+
+	if (_hierarchy == NULL)
+	{
+		*pFlag = TRUE;
+		return S_OK;
+	}
+
+	if (_isNemerle < 0)
+	{
+		GUID projectTypeGuid;
+		_HR(_hierarchy->GetGuidProperty(VSITEMID_ROOT, VSHPROPID_TypeGuid, &projectTypeGuid));
+
+		_isNemerle = projectTypeGuid == NemerleProjectTypeGuid;
+	}
+	*pFlag = _isNemerle;
+	return hr;
 }

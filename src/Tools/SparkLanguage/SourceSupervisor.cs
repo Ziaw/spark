@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
+using NRails.Spark;
 using Spark.Compiler;
 using Spark.Parser.Markup;
 using SparkLanguage.VsAdapters;
@@ -20,6 +22,7 @@ namespace SparkLanguage
         readonly MarkupGrammar _grammar;
         readonly ISparkSource _source;
         readonly string _path;
+        public static readonly Guid NemerleProjectTypeGuid = new Guid("edcc3b85-0bad-11db-bc1a-00112fde8b61");
 
         uint _dwLastCookie;
         readonly IDictionary<uint, ISourceSupervisorEvents> _events = new Dictionary<uint, ISourceSupervisorEvents>();
@@ -31,7 +34,7 @@ namespace SparkLanguage
             // in the generated file. This setting is changed for the entire 
             // AppDomain running inside the devenv process.
 
-            //SourceWriter.AdjustDebugSymbolsDefault = false;
+            SourceWriter.AdjustDebugSymbolsDefault = false;
         }
 
         public SourceSupervisor(ISparkSource source)
@@ -45,16 +48,26 @@ namespace SparkLanguage
 
             _path = GetDocumentPath(hierarchy, itemid);
 
-
-            //Spark.Web.Mvc.SparkView
-            //MyBaseView
-
             var settings = new VsProjectSparkSettings(hierarchy)
                                {
                                    PageBaseType = source.GetDefaultPageBaseType()
                                };
 
+                       
+            if (IsNemerleProject(hierarchy))
+            {
+                var nRailsContainer = SparkNemerleEngineStarter.CreateContainer(settings);
+                _engine = (SparkViewEngine) nRailsContainer.GetService<ISparkViewEngine>();
+            }
+            else
+            {
+                _engine = new SparkViewEngine(settings);
+            }
+
             var viewFolder = new VsProjectViewFolder(_source, hierarchy);
+            _engine.ViewFolder = viewFolder;
+
+            /*
             ResolveEventHandler assemblyResolve = (sender, args) =>
             {
                 var name = args.Name;
@@ -89,10 +102,18 @@ namespace SparkLanguage
             {
                 AppDomain.CurrentDomain.AssemblyResolve -= assemblyResolve;
             }
-
+            */
 
 
             _grammar = new MarkupGrammar(settings);
+        }
+
+        private static bool IsNemerleProject(IVsHierarchy hierarchy)
+        {
+            Guid projectTypeGuid;
+            hierarchy.GetGuidProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_TypeGuid, out projectTypeGuid);
+            
+            return projectTypeGuid == NemerleProjectTypeGuid;
         }
 
         private static string GetDocumentPath(IVsHierarchy hierarchy, uint itemid)

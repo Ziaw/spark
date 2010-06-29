@@ -3,6 +3,7 @@
 
 #include "atlutil.h"
 #include "SparkLanguagePackage_i.h"
+#include "Source.h"
 
 class ColorizerInit
 {
@@ -23,6 +24,13 @@ class ATL_NO_VTABLE Colorizer:
 
 	long _paintLength;
 	SourcePainting* _paintArray;
+	
+	BOOL IsNemerle() 
+	{ 
+		BOOL test = 0;
+		_source->IsNemerle(&test); 
+		return test;
+	}
 
 public:
 	Colorizer()

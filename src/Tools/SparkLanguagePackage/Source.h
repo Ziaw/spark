@@ -6,7 +6,9 @@
 
 // EDCC3B79-0BAD-11DB-BC1A-00112FDE8B61
 static const GUID NemerleLangGuid = 
-		{ 0xEDCC3B79, 0x0BAD, 0x11DB, { 0xbc, 0x1a, 0x00, 0x11, 0x2f, 0xde, 0x8b, 0x61 } };
+		{ 0xEDCC3B79, 0x0BAD, 0x11DB, { 0xBC, 0x1A, 0x00, 0x11, 0x2F, 0xDE, 0x8B, 0x61 } };
+static const GUID NemerleProjectTypeGuid = 
+		{ 0xEDCC3B85, 0x0BAD, 0x11DB, { 0xBC, 0x1A, 0x00, 0x11, 0x2F, 0xDE, 0x8B, 0x61 } };
 
 
 class SourceInit
@@ -39,7 +41,8 @@ class ATL_NO_VTABLE Source :
 
 	int _paintLength;
 	SourcePainting* _paintArray;
-
+	short _isNemerle;
+	BOOL isNemerle() { BOOL test; IsNemerle(&test); return test; };
 
 public:
 	Source()
@@ -47,7 +50,9 @@ public:
 		_supervisorAdvise = 0;
 		_paintLength = 0;
 		_paintArray = NULL;
+		_isNemerle = -1;
 	}
+
 
 	BEGIN_COM_MAP(Source)
 		COM_INTERFACE_ENTRY(ISparkSource)
@@ -191,6 +196,6 @@ public:
 
 	STDMETHODIMP EnsureSecondaryBufferReady();
 
-
+	STDMETHODIMP IsNemerle(__RPC__out BOOL *pFlag);
 };
 

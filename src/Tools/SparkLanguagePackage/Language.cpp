@@ -46,14 +46,46 @@ STDMETHODIMP Language::GetColorizer(
 {
 	HRESULT hr = S_OK;
 
-	CComPtr<IVsProvideColorableItems> csharpItems;
-	// todo: _HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
-	_HR(_site->QueryService(NemerleLangGuid, &csharpItems));
+	if (_languageItems)
+	{
+		_languageItems.Detach();
+		_languageItems = NULL;
+	}
 
-	int csharpItemCount;
-	_HR(csharpItems->GetItemCount(&csharpItemCount));
+	// detect language
+	// Get the moniker for the text buffer
+	CComPtr<IVsUserData> userData;
+	_HR(pBuffer->QueryInterface(&userData));		
+	CComVariant moniker;
+	_HR(userData->GetData(__uuidof(IVsUserData), &moniker));
+	_HR(moniker.ChangeType(VT_BSTR));
 
-	ColorizerInit init = {this, pBuffer, csharpItemCount};
+	// Locate hierarchy itemid
+	CComPtr<IWebApplicationCtxSvc> webApplicationCtx;
+	_HR(_site->QueryService(__uuidof(IWebApplicationCtxSvc), &webApplicationCtx));
+
+	CComPtr<IVsHierarchy> hierarchy;
+	VSITEMID itemid;
+	_HR(webApplicationCtx->GetItemContextFromPath(V_BSTR(&moniker), FALSE, &hierarchy, &itemid));
+
+	GUID projectTypeGuid;
+	_HR(hierarchy->GetGuidProperty(VSITEMID_ROOT, VSHPROPID_TypeGuid, &projectTypeGuid));
+
+	BOOL isNemerle = projectTypeGuid == NemerleProjectTypeGuid;
+
+	if (isNemerle)
+	{
+		_HR(_site->QueryService(NemerleLangGuid, &_languageItems))
+	}
+	else
+	{
+		_HR(_site->QueryService(__uuidof(CSharp), &_languageItems));
+	}
+
+	int languageItemCount;
+	_HR(_languageItems->GetItemCount(&languageItemCount));
+
+	ColorizerInit init = {this, pBuffer, languageItemCount};
 	_HR(Colorizer::CreateInstance(init, ppColorizer));
 	return hr;
 }
@@ -74,20 +106,15 @@ STDMETHODIMP Language::GetItemCount(
 {
 	HRESULT hr = S_OK;
 
-	CComPtr<IVsProvideColorableItems> csharpItems;
-	
-	//todo: _HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
-	_HR(_site->QueryService(NemerleLangGuid, &csharpItems));
-
-	int csharpItemCount;
-	_HR(csharpItems->GetItemCount(&csharpItemCount));
+	int languageItemCount;
+	_HR(_languageItems->GetItemCount(&languageItemCount));
 
 	CComPtr<IVsProvideColorableItems> sparkItems;
 	_HR(_supervisor->QueryInterface(&sparkItems));
 	int sparkItemCount;
 	_HR(sparkItems->GetItemCount(&sparkItemCount));
 	
-	*piCount = csharpItemCount + sparkItemCount;
+	*piCount = languageItemCount + sparkItemCount;
 	return hr;
 }
 
@@ -97,22 +124,12 @@ STDMETHODIMP Language::GetColorableItem(
 {
 	HRESULT hr = S_OK;
 
-	// return csharp color info for lower band
-	CComPtr<IVsProvideColorableItems> csharpItems;
-	
-	//todo: _HR(_site->QueryService(__uuidof(CSharp), &csharpItems));
-	_HR(_site->QueryService(NemerleLangGuid, &csharpItems));
+	int languageItemCount;
+	_HR(_languageItems->GetItemCount(&languageItemCount));
 
-	// default@[0] : reserved
-	// csharpItemCount@[1..csharpItemCount] : contained language colors
-	// sparkItemCount@[csharpItemCount+1..csharpItemCount+sparkItemCount] : spark language colors
-
-	int csharpItemCount;
-	_HR(csharpItems->GetItemCount(&csharpItemCount));
-
-	if (SUCCEEDED(hr) && iIndex <= csharpItemCount)
+	if (SUCCEEDED(hr) && iIndex <= languageItemCount)
 	{
-		_HR(csharpItems->GetColorableItem(iIndex, ppItem));
+		_HR(_languageItems->GetColorableItem(iIndex, ppItem));
 		
 		CComBSTR name;
 		_HR((*ppItem)->GetDisplayName(&name));
@@ -127,9 +144,9 @@ STDMETHODIMP Language::GetColorableItem(
 	int sparkItemCount;
 	_HR(sparkItems->GetItemCount(&sparkItemCount));
 
-	if (SUCCEEDED(hr) && iIndex <= csharpItemCount + sparkItemCount)
+	if (SUCCEEDED(hr) && iIndex <= languageItemCount + sparkItemCount)
 	{
-		_HR(sparkItems->GetColorableItem(iIndex - csharpItemCount, ppItem));
+		_HR(sparkItems->GetColorableItem(iIndex - languageItemCount, ppItem));
 
 		CComBSTR name;
 		_HR((*ppItem)->GetDisplayName(&name));

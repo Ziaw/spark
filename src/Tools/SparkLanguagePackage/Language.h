@@ -18,6 +18,7 @@ class ATL_NO_VTABLE Language :
 	CComAutoCriticalSection _sourcesLock;
 	CSimpleMap<IUnknown*, IUnknown*> _sources;
 	CComPtr<ILanguageSupervisor> _supervisor;
+	CComPtr<IVsProvideColorableItems> _languageItems;
 
 public:
 	Language()

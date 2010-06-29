@@ -277,6 +277,10 @@ namespace SparkLanguage.Tests
             public abstract string GetRunningDocumentText(string CanonicalName);
             public abstract void GetPaint(out int cPaint, IntPtr prgPaint);
             public abstract string GetDefaultPageBaseType();
+            public int IsNemerle()
+            {
+                return 0;
+            }
         }
 
         public class StubSourceSupervisorEvents : ISourceSupervisorEvents
